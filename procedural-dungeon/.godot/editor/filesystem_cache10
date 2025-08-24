@@ -1,5 +1,5 @@
 ea4bc82a6ad023ab7ee23ee620429895
-::res://::1755910045
+::res://::1756006811
 node_2d.gd::GDScript/GDScript::-1::1755719448::0::1::::<>CharacterBody2D<><>0<>0<><>::
 ::res://assets/::1755909956
 blasphemous_prac.png::CompressedTexture2D/CompressedTexture2D::621475563413655429::1754863859::1755909956::1::::<><><>0<>0<>517bdddc6358253787d13c0299c5b595<>res://.godot/imported/blasphemous_prac.png-64e3ef0da97096cc4af9644822e8b1ad.ctex::
@@ -23,14 +23,14 @@ raya_balc_floor.png::CompressedTexture2D/CompressedTexture2D::541685756934041403
 raya_balc_wall.png::CompressedTexture2D/CompressedTexture2D::4650032297242190096::1755816147::1755909956::1::::<><><>0<>0<>27eb6a5e91550355ebce7eee4eb2c80e<>res://.godot/imported/raya_balc_wall.png-4aebdfd6611138f53811445374812e95.ctex::
 ::res://procedural_dungeon/::1755898642
 ::res://resources/::1754864128
-::res://scenes/::1755909964
-auto_tile.tscn::PackedScene::5669475617355417141::1755909964::0::1::::<><><>0<>0<><>::uid://diyrh231mrj5k::::res://assets/raya_basic_tileset.png<>uid://bij5cb8fjbk5q::::res://scripts/auto_tile.gd<>uid://cuhhpf08kqmks::::res://scenes/player.tscn
-main.tscn::PackedScene::708320961397162129::1755909964::0::1::::<><><>0<>0<><>::uid://cmyf6ujc6fkn5::::res://scripts/character_body_2d.gd<>uid://i4bu2fp1bge4::::res://assets/blasphemous_prac.png<>uid://cp0cvpcw0sitn::::res://assets/TX Tileset Grass.png<>uid://cw0xam04va1ui::::res://assets/sat_tiles.png<>uid://dgkfhelf8e2ej::::res://assets/TX Tileset Stone Ground.png
+::res://scenes/::1755977190
+auto_tile.tscn::PackedScene::5669475617355417141::1755977190::0::1::::<><><>0<>0<><>::uid://diyrh231mrj5k::::res://assets/raya_basic_tileset.png<>uid://bij5cb8fjbk5q::::res://scripts/auto_tile.gd<>uid://cuhhpf08kqmks::::res://scenes/player.tscn
+main.tscn::PackedScene::708320961397162129::1755977190::0::1::::<><><>0<>0<><>::uid://cmyf6ujc6fkn5::::res://scripts/character_body_2d.gd<>uid://i4bu2fp1bge4::::res://assets/blasphemous_prac.png<>uid://cp0cvpcw0sitn::::res://assets/TX Tileset Grass.png<>uid://cw0xam04va1ui::::res://assets/sat_tiles.png<>uid://dgkfhelf8e2ej::::res://assets/TX Tileset Stone Ground.png
 player.tscn::PackedScene/PackedScene::6191520993033443478::1755818085::0::1::::<><><>0<>0<><>::uid://cmyf6ujc6fkn5::::res://scripts/character_body_2d.gd<>uid://c0nvggqylqydj::::res://assets/raya_balc/Karalos_Walk.png
 procedural.tscn::PackedScene/PackedScene::4050180892543707071::1755818085::0::1::::<><><>0<>0<><>::uid://c3krk25yeo3::::res://scripts/procedural.gd<>uid://cuhhpf08kqmks::::res://scenes/player.tscn
 raya_balcony.tscn::PackedScene/PackedScene::7136065286955759120::1755818085::0::1::::<><><>0<>0<><>::uid://hynqq8jawfl8::::res://assets/raya_balc/raya_balc_floor.png<>uid://bd8gcv24bu4t::::res://assets/raya_balc/raya_balc_ceiling.png<>uid://b7irl8s6dbi0g::::res://assets/raya_balc/raya_balc_wall.png<>uid://2yjnfdiwuqbm::::res://assets/raya_balc/raya_balc_decor.png<>uid://cqvsdmkmme0lq::::res://assets/raya_balc/raya_balc_astrolabe.png
 room1.tscn::PackedScene/PackedScene::6261668123261953200::1755814868::0::1::::<><><>0<>0<><>::uid://dxh8l7n5ovcc1::::res://assets/room1.png
 ::res://scripts/::1755909711
-auto_tile.gd::GDScript::2968336017695853740::1755909711::0::1::::<>Node2D<><>0<>0<><>::
+auto_tile.gd::GDScript/GDScript::2968336017695853740::1755909711::0::1::::<>Node2D<><>0<>0<><>::
 character_body_2d.gd::GDScript/GDScript::5665012566217657880::1755722972::0::1::::<>CharacterBody2D<><>0<>0<><>::
-procedural.gd::GDScript::5847598857421064::1755908142::0::1::::<>Node2D<><>0<>0<><>::
+procedural.gd::GDScript/GDScript::5847598857421064::1755908142::0::1::::<>Node2D<><>0<>0<><>::

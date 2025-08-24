@@ -1,6 +1,7 @@
 extends Node2D
 
 @onready var tiles = $TileMapLayer
+@onready var player = preload("res://scenes/player.tscn")
 
 @export var grid_size = Vector2(32, 32)
 @export var map_width_cells = 32
@@ -22,6 +23,7 @@ func _ready():
 	
 func generate_dungeon():
 	var rooms_placed = []
+	var player_placed = false
 	
 	for i in range(num_rooms):
 		var attempts = 0
@@ -42,6 +44,11 @@ func generate_dungeon():
 				place_room(room_rect)
 				rooms_placed.append(room_rect)
 				placed = true
+				if not player_placed:
+					var player_instance = player.instantiate()
+					player_instance.position = room_rect.position
+					add_child(player_instance)
+					player_placed = true
 				print("Placed room at: ", room_rect.position, " size: ", room_rect.size)
 					
 	flood_fill()
@@ -81,14 +88,14 @@ func place_room(room_rect: Rect2i):
 		
 func flood_fill():
 	var start_points = find_start_points()
-	print("start points: ", start_points)
+	#print("start points: ", start_points)
 	if start_points.is_empty():
 		print("Fail")
 		return
 		
+	start_points.shuffle()
 	for start in start_points:
-		if not visited_tiles.has(start):
-			flood_fill_corridors(start)
+		flood_fill_corridors(start)
 	
 	if not corridor_tiles.is_empty():
 		tiles.set_cells_terrain_connect(corridor_tiles, 0, 0, true)
@@ -118,35 +125,49 @@ func flood_fill_corridors(pos: Vector2i):
 	while not stack.is_empty():
 		var current = stack.pop_back()
 		
-		if (visited_tiles.has(current) or 
-			corridor_tiles.has(current) or 
-			not is_within_bounds(current) or 
-			is_adjacent_to_room(current, 1)):
-			continue
+		if (not visited_tiles.has(current) and 
+			not corridor_tiles.has(current) and 
+			is_within_bounds(current) and 
+			not is_adjacent_to_room(current, 1)):
 			
-		visited_tiles.append(current)
-		corridor_tiles.append(current)
-		
-		directions.shuffle()
-		
-		for direction in directions:
-			var neighbor = current + direction
-			if not visited_tiles.has(neighbor) and is_within_bounds(neighbor):
-				if randf() > 0.5:
+			visited_tiles.append(current)
+			corridor_tiles.append(current)
+			
+			#print("current: ", current)
+			
+			directions.shuffle()
+			
+			for direction in directions:
+				var neighbor = current + direction
+				
+				"""print("neighbor: ", neighbor, " ", 
+				visited_tiles.has(neighbor), is_within_bounds(neighbor),
+				is_adjacent_to_room(neighbor, 1))"""
+				
+				if (not visited_tiles.has(neighbor) and 
+					is_within_bounds(neighbor) and 
+					not is_adjacent_to_room(neighbor, 1)):
+					#print("pass")
+					
+					var connection_count = 0
+					var neighbor_directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
+					for neighbor_dir in neighbor_directions:
+						var neighbor_neighbor = neighbor + neighbor_dir
+						
+						"""print("neighbor's neighbors: ", neighbor_neighbor, 
+							corridor_tiles.has(neighbor_neighbor), room_tiles.has(neighbor_neighbor),
+							neighbor_neighbor == current)"""
+						
+						if (corridor_tiles.has(neighbor_neighbor) or
+							room_tiles.has(neighbor_neighbor) or
+							neighbor_neighbor == current):
+							connection_count += 1
+							#print("connections: ", connection_count)
+							
+					if connection_count > 1:
+						visited_tiles.append(neighbor)
+						
 					stack.append(neighbor)
-		
-		
-		"""var neighbors = [
-			Vector2i(current.x + 1, current.y),
-			Vector2i(current.x - 1, current.y),
-			Vector2i(current.x, current.y + 1),
-			Vector2i(current.x, current.y - 1)]
-			
-		neighbors.shuffle()
-			
-		for neighbor in neighbors:
-			if not visited_tiles.has(neighbor) and is_within_bounds(neighbor):
-				stack.append(neighbor)"""
 	
 func get_neighbors(pos: Vector2i) -> Array[Vector2i]:
 	return[

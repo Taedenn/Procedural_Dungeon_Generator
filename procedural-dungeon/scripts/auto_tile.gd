@@ -179,7 +179,6 @@ func flood_fill_corridors(pos: Vector2i):
 			not is_adjacent_to_room(current, 1)):
 			
 			visited_tiles.append(current)
-			corridor_tiles.append(current)
 			
 			directions.shuffle()
 			
@@ -189,6 +188,7 @@ func flood_fill_corridors(pos: Vector2i):
 				if (not visited_tiles.has(neighbor) and 
 					is_within_bounds(neighbor) and 
 					not is_adjacent_to_room(neighbor, 1)):
+					corridor_tiles.append(current)
 					
 					var connection_count = 0
 					var neighbor_directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]

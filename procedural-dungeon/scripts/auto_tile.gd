@@ -12,6 +12,7 @@ extends Node2D
 @export var max_room_size = Vector2i(10,10)
 
 var room_tiles: Array[Vector2i] = []
+var rooms_placed: Array[Rect2i] = []
 var visited_tiles: Array[Vector2i] = []
 var corridor_tiles: Array[Vector2i] = []
 var grid_color = Color(1, 1, 1, 0.2)
@@ -22,11 +23,9 @@ func _ready():
 	generate_dungeon()
 	
 func generate_dungeon(): 
-	
 	## place number of rooms specified with given dimensions, 
 	## place player, and begin flood fill
 	
-	var rooms_placed = []
 	var player_placed = false
 	
 	for i in range(num_rooms):
@@ -54,9 +53,11 @@ func generate_dungeon():
 					add_child(player_instance)
 					player_placed = true
 	flood_fill()
+	room_connections()
 
 func _draw() -> void:
 	## draw simple grid
+	
 	for x in map_width_cells + 1:
 		var start = Vector2(x * grid_size.x, 0)
 		var end = Vector2(x * grid_size.x, map_height_cells * grid_size.y)
@@ -80,6 +81,7 @@ func place_room(room_rect: Rect2i):
 func flood_fill():
 	## begin flood fill algorithm, 
 	## find all empty spaces leftover and fill according to rules
+	
 	var start_points = find_start_points()
 	if start_points.is_empty():
 		print("No valid start points")
@@ -93,8 +95,55 @@ func flood_fill():
 	if not corridor_tiles.is_empty():
 		tiles.set_cells_terrain_connect(corridor_tiles, 0, 0, true)
 	
+func room_connections():
+	## find tiles neighboring rooms, choose one of these neighbors to connect to a corridor
+	
+	for room in rooms_placed:
+		var edges = get_perimeter_points(room)
+		var adjacent_tiles: Array[Vector2i] = []
+		for edge in edges:
+			adjacent_tiles.append_array(get_neighbors(edge))
+		
+		var connections: Array[Vector2i] = []
+		for tile in adjacent_tiles:
+			if (is_within_bounds(tile) and
+				not room_tiles.has(tile) and 
+				is_adjacent_to_corridor(tile)):
+				connections.append(tile)
+		connections = reduce_array(connections)
+		tiles.set_cells_terrain_connect(connections, 0, 0, true)
+	
+func get_perimeter_points(rect: Rect2i) -> Array[Vector2i]:
+	var perimeter_points: Array[Vector2i] = []
+	var pos = rect.position
+	var size = rect.size
+	
+	for x in range(pos.x, pos.x + size.x):
+		perimeter_points.append(Vector2i(x, pos.y))
+	
+	for x in range(pos.x, pos.x + size.x):
+		perimeter_points.append(Vector2i(x, pos.y + size.y - 1))
+	
+	for y in range(pos.y, pos.y + size.y):
+		perimeter_points.append(Vector2i(pos.x, y))
+	
+	for y in range(pos.y, pos.y + size.y):
+		perimeter_points.append(Vector2i(pos.x - 1 + size.x, y))
+	
+	return perimeter_points
+
+func reduce_array(arr: Array) -> Array:
+	var working_array = arr.duplicate()
+	while working_array.size() > 1:
+		var items_to_remove = working_array.size()/2
+		for i in range(items_to_remove):
+			var random_index = randi() % working_array.size()
+			working_array.remove_at(random_index)
+	return working_array
+
 func find_start_points() -> Array[Vector2i]:
-	## finds all empty tiles - ones bordering rooms
+	## finds all empty tiles minus ones bordering rooms
+	
 	var inverse_array: Array[Vector2i] = []
 	
 	var x_tiles: Array[Vector2i] = []
@@ -117,6 +166,7 @@ func flood_fill_corridors(pos: Vector2i):
 	##   check neighboring tiles that are empty/unvisited
 	##   check neighboring tile's neighbors
 	##   if more than one connection (touching filled tile), do not fill
+	
 	var stack: Array[Vector2i] = [pos]
 	var directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 	
@@ -186,5 +236,17 @@ func is_adjacent_to_room(pos: Vector2i, distance: int = 1) -> bool:
 	for room in room_tiles:
 		if(abs(room.x - pos.x) <= distance and 
 			abs(room.y - pos.y) <= distance):
+				return true
+	return false
+
+func is_adjacent_to_corridor(pos: Vector2i) -> bool:
+	var directions = [
+		Vector2i(pos.x + 1, pos.y),
+		Vector2i(pos.x - 1, pos.y),
+		Vector2i(pos.x, pos.y + 1),
+		Vector2i(pos.x, pos.y - 1)]
+		
+	for dir in directions:
+		if(corridor_tiles.has(dir)):
 				return true
 	return false

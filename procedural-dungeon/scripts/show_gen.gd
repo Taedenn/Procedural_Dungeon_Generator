@@ -3,7 +3,7 @@ extends Node2D
 @onready var tiles = $TileMapLayer
 @onready var player = preload("res://scenes/player.tscn")
 
-@export var grid_size = Vector2i(32, 32)
+@export var grid_size = Vector2(32, 32)
 @export var map_width_cells = 32
 @export var map_height_cells = 32
 @export var num_rooms = 5
@@ -11,23 +11,64 @@ extends Node2D
 @export var min_room_size = Vector2i(2,2)
 @export var max_room_size = Vector2i(10,10)
 
+@export var gen_delay = 0.1
+@export var show_gen = true
+
 var room_tiles: Array[Vector2i] = []
 var visited_tiles: Array[Vector2i] = []
 var corridor_tiles: Array[Vector2i] = []
+
 var grid_color = Color(1, 1, 1, 0.2)
 var grid_line_width = 1.0
 
+var current_step = 0
+var rooms_placed = []
+var player_placed = false
+
 func _ready():
 	queue_redraw()
-	generate_dungeon()
+	if show_gen:
+		start_show_gen()
+	else:
+		generate_dungeon()
 	
-func generate_dungeon(): 
+func start_show_gen():
+	current_step = 0
+	rooms_placed = []
+	player_placed = false
+	room_tiles = []
+	visited_tiles = []
+	corridor_tiles = []
+	tiles.clear()
 	
-	## place number of rooms specified with given dimensions, 
-	## place player, and begin flood fill
+	$Timer.wait_time = gen_delay
+	$Timer.start()
 	
-	var rooms_placed = []
-	var player_placed = false
+func _on_timer_timeout():
+	match current_step:
+		0:
+			if rooms_placed.size() < num_rooms:
+				try_place_next_room()
+			else:
+				current_step += 1
+				$Timer.start()
+		1:
+			var start_points = find_start_points()
+			if not start_points.is_empty():
+				start_points.shuffle()
+				flood_fill_step(start_points[0])
+			else:
+				current_step += 1
+				$Timer.start()
+		2:
+			if not corridor_tiles.is_empty():
+				tiles.set_cells_terrain_connect(corridor_tiles, 0, 0, true)
+			$Timer.stop()
+			print("Dungeon generation complete")
+
+
+
+func generate_dungeon():
 	
 	for i in range(num_rooms):
 		var attempts = 0
@@ -50,13 +91,14 @@ func generate_dungeon():
 				placed = true
 				if not player_placed:
 					var player_instance = player.instantiate()
-					player_instance.position = (room_rect.position + room_rect.size/2) * grid_size + grid_size / 2
+					player_instance.position = room_rect.position * grid_size + grid_size/2
 					add_child(player_instance)
 					player_placed = true
+				print("Placed room at: ", room_rect.position, " size: ", room_rect.size)
+					
 	flood_fill()
-
+	
 func _draw() -> void:
-	## draw simple grid
 	for x in map_width_cells + 1:
 		var start = Vector2(x * grid_size.x, 0)
 		var end = Vector2(x * grid_size.x, map_height_cells * grid_size.y)
@@ -66,7 +108,45 @@ func _draw() -> void:
 		var start = Vector2(0, y * grid_size.y)
 		var end = Vector2(map_width_cells * grid_size.x, y * grid_size.y)
 		draw_line(start, end, grid_color, grid_line_width)
+		
+func is_position_valid(room_rect: Rect2i, existing_rooms: Array) -> bool:
+	var buffered_rect = Rect2i(
+		room_rect.position.x - 1,
+		room_rect.position.y - 1,
+		room_rect.size.x + 2,
+		room_rect.size.y + 2
+	)
+	for room in existing_rooms:
+		if buffered_rect.intersects(room):
+			return false
+	return true
 	
+func try_place_next_room():
+	var attempts = 0
+	var placed = false
+	
+	while attempts < max_attempts and not placed:
+		attempts += 1
+		
+		var room_width = randi_range(min_room_size.x, max_room_size.x)
+		var room_height = randi_range(min_room_size.y, max_room_size.y)
+		
+		var grid_x = randi_range(0, map_width_cells - room_width)
+		var grid_y = randi_range(0, map_height_cells - room_height)
+		
+		var room_rect = Rect2i(grid_x, grid_y, room_width, room_height)
+		
+		if is_position_valid(room_rect, rooms_placed):
+			place_room(room_rect)
+			rooms_placed.append(room_rect)
+			placed = true
+			
+			if not player_placed:
+				var player_instance = player.instantiate()
+				player_instance.position = room_rect.position * grid_size + grid_size/2
+				add_child(player_instance)
+				player_placed = true
+
 func place_room(room_rect: Rect2i):
 	var cells: Array[Vector2i] = []
 	
@@ -78,23 +158,68 @@ func place_room(room_rect: Rect2i):
 	tiles.set_cells_terrain_connect(cells, 0, 0, true)
 		
 func flood_fill():
-	## begin flood fill algorithm, 
-	## find all empty spaces leftover and fill according to rules
 	var start_points = find_start_points()
 	if start_points.is_empty():
 		print("No valid start points")
 		return
 		
 	start_points.shuffle()
-	
 	for start in start_points:
+		
 		flood_fill_corridors(start)
 	
 	if not corridor_tiles.is_empty():
 		tiles.set_cells_terrain_connect(corridor_tiles, 0, 0, true)
 	
+func flood_fill_step(start_pos: Vector2i):
+	var stack: Array[Vector2i] = [start_pos]
+	var directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
+	var processed_step = 0
+	var max_per_step = 10
+	
+	while not stack.is_empty() and processed_step < max_per_step:
+		var current = stack.pop_back()
+		print(current)
+		
+		if (not visited_tiles.has(current) and 
+			not corridor_tiles.has(current) and 
+			is_within_bounds(current) and 
+			not is_adjacent_to_room(current, 1)):
+			
+			visited_tiles.append(current)
+			corridor_tiles.append(current)
+			
+			tiles.set_cell(current, 0, 0, 0)
+			
+			directions.shuffle()
+			
+			for direction in directions:
+				var neighbor = current + direction
+				
+				if (not visited_tiles.has(neighbor) and 
+					is_within_bounds(neighbor) and 
+					not is_adjacent_to_room(neighbor, 1)):
+					
+					var connection_count = 0
+					var neighbor_directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
+					for neighbor_dir in neighbor_directions:
+						var neighbor_neighbor = neighbor + neighbor_dir
+						
+						if (corridor_tiles.has(neighbor_neighbor) or
+							room_tiles.has(neighbor_neighbor) or
+							neighbor_neighbor == current):
+							connection_count += 1
+							
+					if connection_count > 1:
+						visited_tiles.append(neighbor)
+						
+					stack.append(neighbor)
+			processed_step += 1
+	if stack.is_empty():
+		current_step += 1
+	queue_redraw()
+	
 func find_start_points() -> Array[Vector2i]:
-	## finds all empty tiles - ones bordering rooms
 	var inverse_array: Array[Vector2i] = []
 	
 	var x_tiles: Array[Vector2i] = []
@@ -113,10 +238,6 @@ func find_start_points() -> Array[Vector2i]:
 	return inverse_array
 	
 func flood_fill_corridors(pos: Vector2i):
-	## algorithm that fills in tiles:
-	##   check neighboring tiles that are empty/unvisited
-	##   check neighboring tile's neighbors
-	##   if more than one connection (touching filled tile), do not fill
 	var stack: Array[Vector2i] = [pos]
 	var directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 	
@@ -161,19 +282,6 @@ func get_neighbors(pos: Vector2i) -> Array[Vector2i]:
 		Vector2i(pos.x - 1, pos.y),
 		Vector2i(pos.x, pos.y + 1),
 		Vector2i(pos.x, pos.y - 1)]
-	
-func is_position_valid(room_rect: Rect2i, existing_rooms: Array) -> bool:
-	## return whether room desired to draw intersects with any existing room
-	var buffered_rect = Rect2i(
-		room_rect.position.x - 1,
-		room_rect.position.y - 1,
-		room_rect.size.x + 2,
-		room_rect.size.y + 2
-	)
-	for room in existing_rooms:
-		if buffered_rect.intersects(room):
-			return false
-	return true
 	
 func is_empty_tile(pos: Vector2i) -> bool:
 	return tiles.get_cell_source_id(pos) == -1

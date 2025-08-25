@@ -2,3 +2,4 @@ res://scenes/auto_tile.tscn
 res://scenes/main.tscn
 res://scenes/player.tscn
 res://scripts/auto_tile.gd
+res://scripts/show_gen.gd

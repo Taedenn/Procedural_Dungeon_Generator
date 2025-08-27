@@ -90,9 +90,9 @@ func flood_fill():
 		return
 		
 	start_points.shuffle()
-	flood_fill_corridors(start_points.pop_front())
-	"for start in start_points:
-		flood_fill_corridors(start)"
+	#flood_fill_corridors(start_points.pop_front())
+	for start in start_points:
+		flood_fill_corridors(start)
 	
 	if not corridor_tiles.is_empty():
 		tiles.set_cells_terrain_connect(corridor_tiles, 0, 0, true)
@@ -135,7 +135,6 @@ func cull_corridors_recursive(attempts: int, cull_count: int):
 	
 	var cull_tiles: Array[Vector2i] = []
 	var corridors_to_check = corridor_tiles.duplicate()
-	print(corridor_tiles.size())
 	
 	for current in corridors_to_check:		
 		if cull_count >= tiles_to_cull or attempts >= max_attempts:
@@ -144,13 +143,11 @@ func cull_corridors_recursive(attempts: int, cull_count: int):
 		if (is_isolated_corridor_tile(current)):
 			corridor_tiles.erase(current)
 			cull_tiles.append(current)
-			print("culled tile: ", current)
+			print("culled tile: ", current, "count: ", cull_count + 1)
 			
 			tiles.set_cells_terrain_connect(cull_tiles, 0, -1, true)
-			print("attempt ", attempts + 1, "/", max_attempts, " cull count: ", cull_count + 1, "/", tiles_to_cull, " ", not corridors_to_check.is_empty())
 			cull_corridors_recursive(attempts + 1, cull_count + 1)
 			return
-	print("no more isolated tiles found")
 
 
 func flood_fill_corridors(pos: Vector2i):
@@ -309,8 +306,7 @@ func is_isolated_corridor_tile(pos: Vector2i) -> bool:
 	for dir in directions:
 		var neighbor_pos = pos + dir
 		
-		if (is_within_bounds(neighbor_pos) and
-			not room_tiles.has(neighbor_pos) and
+		if (not room_tiles.has(neighbor_pos) and
 			not corridor_tiles.has(neighbor_pos)):
 			empty_neighbors += 1
 	return empty_neighbors >= 3

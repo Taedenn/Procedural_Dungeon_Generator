@@ -10,6 +10,7 @@ extends Node2D
 @export var max_attempts = 100
 @export var min_room_size = Vector2i(2,2)
 @export var max_room_size = Vector2i(10,10)
+@export var tiles_to_cull: int = 100
 
 var room_tiles: Array[Vector2i] = []
 var rooms_placed: Array[Rect2i] = []
@@ -54,6 +55,7 @@ func generate_dungeon():
 					player_placed = true
 	flood_fill()
 	room_connections()
+	cull_corridors()
 
 func _draw() -> void:
 	## draw simple grid
@@ -67,7 +69,7 @@ func _draw() -> void:
 		var start = Vector2(0, y * grid_size.y)
 		var end = Vector2(map_width_cells * grid_size.x, y * grid_size.y)
 		draw_line(start, end, grid_color, grid_line_width)
-	
+
 func place_room(room_rect: Rect2i):
 	var cells: Array[Vector2i] = []
 	
@@ -77,7 +79,7 @@ func place_room(room_rect: Rect2i):
 			room_tiles.append(Vector2i(x, y))
 			
 	tiles.set_cells_terrain_connect(cells, 0, 0, true)
-		
+
 func flood_fill():
 	## begin flood fill algorithm, 
 	## find all empty spaces leftover and fill according to rules
@@ -94,7 +96,7 @@ func flood_fill():
 	
 	if not corridor_tiles.is_empty():
 		tiles.set_cells_terrain_connect(corridor_tiles, 0, 0, true)
-	
+
 func room_connections():
 	## find tiles neighboring rooms, choose one of these neighbors to connect to a corridor
 	
@@ -104,33 +106,98 @@ func room_connections():
 		for edge in edges:
 			adjacent_tiles.append_array(get_neighbors(edge))
 		
+		adjacent_tiles.shuffle()
 		var connections: Array[Vector2i] = []
 		for tile in adjacent_tiles:
 			if (is_within_bounds(tile) and
 				not room_tiles.has(tile)): 
-					if (is_adjacent_to_corridor(tile) or get_adjacent_room_connections(tile) > 3):
+					if (is_adjacent_to_corridor(tile)):
 						connections.append(tile)
-		connections = reduce_array(connections)
-		tiles.set_cells_terrain_connect(connections, 0, 0, true)
+					if (connections.is_empty() and get_adjacent_room_connections(tile) > 3):
+						connections.append(tile)
+		
+		if not connections.is_empty():
+			connections = reduce_array(connections)
+			if not corridor_tiles.has(connections[0]):
+				corridor_tiles.append(connections[0])
+			tiles.set_cells_terrain_connect(connections, 0, 0, true)
+
+func cull_corridors():
+	var attempts = 0
+	var cull_count = 0
+	cull_corridors_recursive(attempts, cull_count)
+
+func cull_corridors_recursive(attempts: int, cull_count: int):
+	## cull corridor tiles surrounded by at least 3 empty tiles
 	
-func get_perimeter_points(rect: Rect2i) -> Array[Vector2i]:
-	var perimeter_points: Array[Vector2i] = []
-	var pos = rect.position
-	var size = rect.size
+	if cull_count >= tiles_to_cull or attempts >= max_attempts:
+		return
 	
-	for x in range(pos.x, pos.x + size.x):
-		perimeter_points.append(Vector2i(x, pos.y))
+	var cull_tiles: Array[Vector2i] = []
+	var corridors_to_check = corridor_tiles.duplicate()
+	print(corridor_tiles.size())
 	
-	for x in range(pos.x, pos.x + size.x):
-		perimeter_points.append(Vector2i(x, pos.y + size.y - 1))
+	for current in corridors_to_check:		
+		if cull_count >= tiles_to_cull or attempts >= max_attempts:
+			break
+		
+		if (is_isolated_corridor_tile(current)):
+			corridor_tiles.erase(current)
+			cull_tiles.append(current)
+			print("culled tile: ", current)
+			
+			tiles.set_cells_terrain_connect(cull_tiles, 0, -1, true)
+			print("attempt ", attempts + 1, "/", max_attempts, " cull count: ", cull_count + 1, "/", tiles_to_cull, " ", not corridors_to_check.is_empty())
+			cull_corridors_recursive(attempts + 1, cull_count + 1)
+			return
+	print("no more isolated tiles found")
+
+
+func flood_fill_corridors(pos: Vector2i):
+	## algorithm that fills in tiles:
+	##   check neighboring tiles that are empty/unvisited
+	##   check neighboring tile's neighbors
+	##   if more than one connection (touching filled tile), do not fill
 	
-	for y in range(pos.y, pos.y + size.y):
-		perimeter_points.append(Vector2i(pos.x, y))
+	var stack: Array[Vector2i] = [pos]
+	var directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
 	
-	for y in range(pos.y, pos.y + size.y):
-		perimeter_points.append(Vector2i(pos.x - 1 + size.x, y))
-	
-	return perimeter_points
+	while not stack.is_empty():
+		var current = stack.pop_back()
+		
+		if (not visited_tiles.has(current) and 
+			not corridor_tiles.has(current) and 
+			is_within_bounds(current) and 
+			not is_adjacent_to_room(current, 1)):
+			
+			visited_tiles.append(current)
+			
+			directions.shuffle()
+			
+			for direction in directions:
+				var neighbor = current + direction
+				
+				if (not visited_tiles.has(neighbor) and 
+					is_within_bounds(neighbor) and 
+					not is_adjacent_to_room(neighbor, 1)):
+					if not corridor_tiles.has(current):
+						corridor_tiles.append(current) 
+					#if current has at least one valid neighbor, place it
+					
+					var connection_count = 0
+					var neighbor_directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
+					for neighbor_dir in neighbor_directions:
+						var neighbor_neighbor = neighbor + neighbor_dir
+						
+						if (corridor_tiles.has(neighbor_neighbor) or
+							room_tiles.has(neighbor_neighbor) or
+							neighbor_neighbor == current):
+							connection_count += 1
+							
+					if connection_count > 1:
+						visited_tiles.append(neighbor)
+						
+					stack.append(neighbor)
 
 func reduce_array(arr: Array) -> Array:
 	var working_array = arr.duplicate()
@@ -161,59 +228,41 @@ func find_start_points() -> Array[Vector2i]:
 				inverse_array.append(cell)
 
 	return inverse_array
-	
-func flood_fill_corridors(pos: Vector2i):
-	## algorithm that fills in tiles:
-	##   check neighboring tiles that are empty/unvisited
-	##   check neighboring tile's neighbors
-	##   if more than one connection (touching filled tile), do not fill
-	
-	var stack: Array[Vector2i] = [pos]
-	var directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
-	
-	while not stack.is_empty():
-		var current = stack.pop_back()
-		
-		if (not visited_tiles.has(current) and 
-			not corridor_tiles.has(current) and 
-			is_within_bounds(current) and 
-			not is_adjacent_to_room(current, 1)):
-			
-			visited_tiles.append(current)
-			
-			directions.shuffle()
-			
-			for direction in directions:
-				var neighbor = current + direction
-				
-				if (not visited_tiles.has(neighbor) and 
-					is_within_bounds(neighbor) and 
-					not is_adjacent_to_room(neighbor, 1)):
-					corridor_tiles.append(current) 
-					#if current has at least one valid neighbor, place it
-					
-					var connection_count = 0
-					var neighbor_directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
-					for neighbor_dir in neighbor_directions:
-						var neighbor_neighbor = neighbor + neighbor_dir
-						
-						if (corridor_tiles.has(neighbor_neighbor) or
-							room_tiles.has(neighbor_neighbor) or
-							neighbor_neighbor == current):
-							connection_count += 1
-							
-					if connection_count > 1:
-						visited_tiles.append(neighbor)
-						
-					stack.append(neighbor)
-	
+
 func get_neighbors(pos: Vector2i) -> Array[Vector2i]:
 	return[
 		Vector2i(pos.x + 1, pos.y),
 		Vector2i(pos.x - 1, pos.y),
 		Vector2i(pos.x, pos.y + 1),
 		Vector2i(pos.x, pos.y - 1)]
+
+func get_perimeter_points(rect: Rect2i) -> Array[Vector2i]:
+	var perimeter_points: Array[Vector2i] = []
+	var pos = rect.position
+	var size = rect.size
 	
+	for x in range(pos.x, pos.x + size.x):
+		perimeter_points.append(Vector2i(x, pos.y))
+	
+	for x in range(pos.x, pos.x + size.x):
+		perimeter_points.append(Vector2i(x, pos.y + size.y - 1))
+	
+	for y in range(pos.y, pos.y + size.y):
+		perimeter_points.append(Vector2i(pos.x, y))
+	
+	for y in range(pos.y, pos.y + size.y):
+		perimeter_points.append(Vector2i(pos.x - 1 + size.x, y))
+	
+	return perimeter_points
+
+func get_adjacent_room_connections(pos: Vector2i) -> int:
+	var connections = 0
+	for room in room_tiles:
+		if(abs(room.x - pos.x) <= 1 and 
+			abs(room.y - pos.y) <= 1):
+			connections += 1
+	return connections
+
 func is_position_valid(room_rect: Rect2i, existing_rooms: Array) -> bool:
 	## return whether room desired to draw intersects with any existing room
 	var buffered_rect = Rect2i(
@@ -226,29 +275,20 @@ func is_position_valid(room_rect: Rect2i, existing_rooms: Array) -> bool:
 		if buffered_rect.intersects(room):
 			return false
 	return true
-	
+
 func is_empty_tile(pos: Vector2i) -> bool:
 	return tiles.get_cell_source_id(pos) == -1
 
 func is_within_bounds(pos: Vector2i) -> bool:
 	return (pos.x >= 0 and pos.x < map_width_cells and
 		pos.y >= 0 and pos.y < map_height_cells)
-		
+
 func is_adjacent_to_room(pos: Vector2i, distance: int = 1) -> bool:
 	for room in room_tiles:
 		if(abs(room.x - pos.x) <= distance and 
 			abs(room.y - pos.y) <= distance):
 				return true
 	return false
-	
-func get_adjacent_room_connections(pos: Vector2i) -> int:
-	var connections = 0
-	for room in room_tiles:
-		if(abs(room.x - pos.x) <= 1 and 
-			abs(room.y - pos.y) <= 1):
-			connections += 1
-			print("tile ", room, " is adjacent to ", pos, " connections: ", connections)
-	return connections
 
 func is_adjacent_to_corridor(pos: Vector2i) -> bool:
 	var directions = [
@@ -261,3 +301,17 @@ func is_adjacent_to_corridor(pos: Vector2i) -> bool:
 		if(corridor_tiles.has(dir)):
 				return true
 	return false
+
+func is_isolated_corridor_tile(pos: Vector2i) -> bool:
+	var empty_neighbors = 0
+	var directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
+	
+	for dir in directions:
+		var neighbor_pos = pos + dir
+		
+		if (is_within_bounds(neighbor_pos) and
+			not room_tiles.has(neighbor_pos) and
+			not corridor_tiles.has(neighbor_pos)):
+			empty_neighbors += 1
+	return empty_neighbors >= 3
+	

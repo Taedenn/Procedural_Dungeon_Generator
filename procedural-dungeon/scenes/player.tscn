@@ -1,7 +1,8 @@
-[gd_scene load_steps=10 format=3 uid="uid://cuhhpf08kqmks"]
+[gd_scene load_steps=11 format=3 uid="uid://cuhhpf08kqmks"]
 
 [ext_resource type="Script" uid="uid://cmyf6ujc6fkn5" path="res://scripts/character_body_2d.gd" id="1_g2els"]
 [ext_resource type="Texture2D" uid="uid://c0nvggqylqydj" path="res://assets/raya_balc/Karalos_Walk.png" id="2_qhqgy"]
+[ext_resource type="Texture2D" uid="uid://c2xdtoiijdpsi" path="res://assets/bg.png" id="3_qhqgy"]
 
 [sub_resource type="Animation" id="Animation_qlg0r"]
 length = 0.001
@@ -115,6 +116,10 @@ vframes = 4
 
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(2, 2)
+
+[node name="Sprite2D" type="Sprite2D" parent="Camera2D"]
+z_index = -5
+texture = ExtResource("3_qhqgy")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 13)

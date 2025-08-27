@@ -10,7 +10,7 @@ extends Node2D
 @export var max_attempts = 100
 @export var min_room_size = Vector2i(2,2)
 @export var max_room_size = Vector2i(10,10)
-@export var tiles_to_cull: int = 100
+@export var tiles_to_cull: int = 700
 
 var room_tiles: Array[Vector2i] = []
 var rooms_placed: Array[Rect2i] = []
@@ -57,7 +57,7 @@ func generate_dungeon():
 	room_connections()
 	cull_corridors()
 
-func _draw() -> void:
+func draw() -> void:
 	## draw simple grid
 	
 	for x in map_width_cells + 1:
@@ -90,9 +90,9 @@ func flood_fill():
 		return
 		
 	start_points.shuffle()
-	#flood_fill_corridors(start_points.pop_front())
-	for start in start_points:
-		flood_fill_corridors(start)
+	flood_fill_corridors(start_points.pop_front())
+	"for start in start_points:
+		flood_fill_corridors(start)"
 	
 	if not corridor_tiles.is_empty():
 		tiles.set_cells_terrain_connect(corridor_tiles, 0, 0, true)
@@ -113,7 +113,7 @@ func room_connections():
 				not room_tiles.has(tile)): 
 					if (is_adjacent_to_corridor(tile)):
 						connections.append(tile)
-					if (connections.is_empty() and get_adjacent_room_connections(tile) > 3):
+					elif (connections.is_empty() and get_adjacent_room_connections(tile) > 3):
 						connections.append(tile)
 		
 		if not connections.is_empty():
@@ -130,25 +130,24 @@ func cull_corridors():
 func cull_corridors_recursive(attempts: int, cull_count: int):
 	## cull corridor tiles surrounded by at least 3 empty tiles
 	
-	if cull_count >= tiles_to_cull or attempts >= max_attempts:
+	if cull_count >= tiles_to_cull or attempts >= max_attempts * 100:
 		return
 	
 	var cull_tiles: Array[Vector2i] = []
 	var corridors_to_check = corridor_tiles.duplicate()
 	
 	for current in corridors_to_check:		
-		if cull_count >= tiles_to_cull or attempts >= max_attempts:
+		if cull_count >= tiles_to_cull or attempts >= max_attempts * 100:
 			break
 		
 		if (is_isolated_corridor_tile(current)):
 			corridor_tiles.erase(current)
 			cull_tiles.append(current)
-			print("culled tile: ", current, "count: ", cull_count + 1)
+			#print("culled tile: ", current, " count: ", cull_count + 1, "/", tiles_to_cull, " attempts: ", attempts + 1, "/", max_attempts * 100)
 			
 			tiles.set_cells_terrain_connect(cull_tiles, 0, -1, true)
 			cull_corridors_recursive(attempts + 1, cull_count + 1)
 			return
-
 
 func flood_fill_corridors(pos: Vector2i):
 	## algorithm that fills in tiles:
@@ -262,11 +261,12 @@ func get_adjacent_room_connections(pos: Vector2i) -> int:
 
 func is_position_valid(room_rect: Rect2i, existing_rooms: Array) -> bool:
 	## return whether room desired to draw intersects with any existing room
+	
 	var buffered_rect = Rect2i(
-		room_rect.position.x - 1,
-		room_rect.position.y - 1,
-		room_rect.size.x + 2,
-		room_rect.size.y + 2
+		room_rect.position.x - 3,
+		room_rect.position.y - 3,
+		room_rect.size.x + 6,
+		room_rect.size.y + 6
 	)
 	for room in existing_rooms:
 		if buffered_rect.intersects(room):
@@ -294,6 +294,7 @@ func is_adjacent_to_corridor(pos: Vector2i) -> bool:
 		Vector2i(pos.x, pos.y + 1),
 		Vector2i(pos.x, pos.y - 1)]
 		
+	directions.shuffle()
 	for dir in directions:
 		if(corridor_tiles.has(dir)):
 				return true

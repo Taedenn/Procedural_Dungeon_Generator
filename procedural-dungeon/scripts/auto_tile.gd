@@ -88,9 +88,9 @@ func flood_fill():
 		return
 		
 	start_points.shuffle()
-	
-	for start in start_points:
-		flood_fill_corridors(start)
+	flood_fill_corridors(start_points.pop_front())
+	"for start in start_points:
+		flood_fill_corridors(start)"
 	
 	if not corridor_tiles.is_empty():
 		tiles.set_cells_terrain_connect(corridor_tiles, 0, 0, true)
@@ -107,9 +107,9 @@ func room_connections():
 		var connections: Array[Vector2i] = []
 		for tile in adjacent_tiles:
 			if (is_within_bounds(tile) and
-				not room_tiles.has(tile) and 
-				is_adjacent_to_corridor(tile)):
-				connections.append(tile)
+				not room_tiles.has(tile)): 
+					if (is_adjacent_to_corridor(tile) or get_adjacent_room_connections(tile) > 3):
+						connections.append(tile)
 		connections = reduce_array(connections)
 		tiles.set_cells_terrain_connect(connections, 0, 0, true)
 	
@@ -135,7 +135,8 @@ func get_perimeter_points(rect: Rect2i) -> Array[Vector2i]:
 func reduce_array(arr: Array) -> Array:
 	var working_array = arr.duplicate()
 	while working_array.size() > 1:
-		var items_to_remove = working_array.size()/2
+		@warning_ignore("integer_division")
+		var items_to_remove = working_array.size() / 2
 		for i in range(items_to_remove):
 			var random_index = randi() % working_array.size()
 			working_array.remove_at(random_index)
@@ -188,7 +189,8 @@ func flood_fill_corridors(pos: Vector2i):
 				if (not visited_tiles.has(neighbor) and 
 					is_within_bounds(neighbor) and 
 					not is_adjacent_to_room(neighbor, 1)):
-					corridor_tiles.append(current)
+					corridor_tiles.append(current) 
+					#if current has at least one valid neighbor, place it
 					
 					var connection_count = 0
 					var neighbor_directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
@@ -238,6 +240,15 @@ func is_adjacent_to_room(pos: Vector2i, distance: int = 1) -> bool:
 			abs(room.y - pos.y) <= distance):
 				return true
 	return false
+	
+func get_adjacent_room_connections(pos: Vector2i) -> int:
+	var connections = 0
+	for room in room_tiles:
+		if(abs(room.x - pos.x) <= 1 and 
+			abs(room.y - pos.y) <= 1):
+			connections += 1
+			print("tile ", room, " is adjacent to ", pos, " connections: ", connections)
+	return connections
 
 func is_adjacent_to_corridor(pos: Vector2i) -> bool:
 	var directions = [

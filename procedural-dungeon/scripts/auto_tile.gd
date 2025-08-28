@@ -3,26 +3,40 @@ extends Node2D
 @onready var tiles = $TileMapLayer
 @onready var player = preload("res://scenes/player.tscn")
 
+# pixel size of tileset
 @export var grid_size = Vector2i(32, 32)
+
+# height/width of dungeon bounds
 @export var map_width_cells = 32
 @export var map_height_cells = 32
+
 @export var num_rooms = 5
-@export var max_attempts = 100
+
+# min/max of room dimensions
 @export var min_room_size = Vector2i(2,2)
 @export var max_room_size = Vector2i(10,10)
-@export var tiles_to_cull: int = 700
 
+# affects how sparse the corridors will be
+# by culling percentage of remaining branches: 0% - 100%
+@export_range(0, 100, 10.0, "suffix:%") var tiles_to_cull: float = 60.0
+
+var max_attempts = 100
+
+# keep track of room tiles, rooms placed,
+# tiles already visted, and corridor tiles
 var room_tiles: Array[Vector2i] = []
 var rooms_placed: Array[Rect2i] = []
 var visited_tiles: Array[Vector2i] = []
 var corridor_tiles: Array[Vector2i] = []
+
+# for drawing grid (optional)
 var grid_color = Color(1, 1, 1, 0.2)
 var grid_line_width = 1.0
 
 func _ready():
 	queue_redraw()
 	generate_dungeon()
-	
+
 func generate_dungeon(): 
 	## place number of rooms specified with given dimensions, 
 	## place player, and begin flood fill
@@ -59,6 +73,7 @@ func generate_dungeon():
 
 func draw() -> void:
 	## draw simple grid
+	## replace with _draw() if you want it to run
 	
 	for x in map_width_cells + 1:
 		var start = Vector2(x * grid_size.x, 0)
@@ -125,28 +140,30 @@ func room_connections():
 func cull_corridors():
 	var attempts = 0
 	var cull_count = 0
-	cull_corridors_recursive(attempts, cull_count)
+	var cull_goal = int(corridor_tiles.size() * (tiles_to_cull * 0.01))
+	# print("corridors: ", corridor_tiles.size(), " cull_goal: ", cull_goal)
+	cull_corridors_recursive(attempts, cull_count, cull_goal)
 
-func cull_corridors_recursive(attempts: int, cull_count: int):
+func cull_corridors_recursive(attempts: int, cull_count: int, cull_goal: int):
 	## cull corridor tiles surrounded by at least 3 empty tiles
-	
-	if cull_count >= tiles_to_cull or attempts >= max_attempts * 100:
+	if cull_count >= cull_goal or attempts >= max_attempts * 100:
 		return
 	
+	var percentage: float = tiles_to_cull * 0.01
 	var cull_tiles: Array[Vector2i] = []
 	var corridors_to_check = corridor_tiles.duplicate()
-	
+	corridors_to_check.shuffle()
 	for current in corridors_to_check:		
-		if cull_count >= tiles_to_cull or attempts >= max_attempts * 100:
+		if cull_count >= cull_goal or attempts >= max_attempts * 100:
 			break
 		
-		if (is_isolated_corridor_tile(current)):
+		if (is_isolated_corridor_tile(current) and randf() <= percentage):
 			corridor_tiles.erase(current)
 			cull_tiles.append(current)
 			#print("culled tile: ", current, " count: ", cull_count + 1, "/", tiles_to_cull, " attempts: ", attempts + 1, "/", max_attempts * 100)
 			
 			tiles.set_cells_terrain_connect(cull_tiles, 0, -1, true)
-			cull_corridors_recursive(attempts + 1, cull_count + 1)
+			cull_corridors_recursive(attempts + 1, cull_count + 1, cull_goal)
 			return
 
 func flood_fill_corridors(pos: Vector2i):

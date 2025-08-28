@@ -110,6 +110,7 @@ libraries = {
 }
 
 [node name="Walk" type="Sprite2D" parent="."]
+visible = false
 texture = ExtResource("2_qhqgy")
 hframes = 4
 vframes = 4

@@ -1,14 +1,16 @@
 extends Node2D
 
 @onready var tiles = $TileMapLayer
-@onready var player = preload("res://scenes/player.tscn")
+@export var terrain_set: int = 1
+@export var terrain: int = 0
 
 # pixel size of tileset
-@export var grid_size = Vector2i(32, 32)
+@export var grid_size = Vector2i(32, 64)
 
 # height/width of dungeon bounds
-@export var map_width_cells = 32
-@export var map_height_cells = 32
+@export var map_width = 32
+@export var map_height = 32
+@export var draw_grid: bool = false
 
 @export var num_rooms = 5
 
@@ -20,6 +22,7 @@ extends Node2D
 # by culling percentage of remaining branches: 0% - 100%
 @export_range(0, 100, 10.0, "suffix:%") var tiles_to_cull: float = 60.0
 
+# prevent infinite loops
 var max_attempts = 100
 
 # keep track of room tiles, rooms placed,
@@ -35,7 +38,24 @@ var grid_line_width = 1.0
 
 func _ready():
 	queue_redraw()
+	
+	# make sure tileset matches desired grid_size
+	tiles.tile_set.tile_size = grid_size
+	
 	generate_dungeon()
+
+func _draw() -> void:
+	## draw simple grid
+	if draw_grid:
+		for x in map_width + 1:
+			var start = Vector2(x * grid_size.x, 0)
+			var end = Vector2(x * grid_size.x, map_height * grid_size.y)
+			draw_line(start, end, grid_color, grid_line_width)
+			
+		for y in map_height + 1:
+			var start = Vector2(0, y * grid_size.y)
+			var end = Vector2(map_width * grid_size.x, y * grid_size.y)
+			draw_line(start, end, grid_color, grid_line_width)
 
 func generate_dungeon(): 
 	## place number of rooms specified with given dimensions, 
@@ -53,8 +73,8 @@ func generate_dungeon():
 			var room_width = randi_range(min_room_size.x, max_room_size.x)
 			var room_height = randi_range(min_room_size.y, max_room_size.y)
 			
-			var grid_x = randi_range(0, map_width_cells - room_width)
-			var grid_y = randi_range(0, map_height_cells - room_height)
+			var grid_x = randi_range(0, map_width - room_width)
+			var grid_y = randi_range(0, map_height - room_height)
 			
 			var room_rect = Rect2i(grid_x, grid_y, room_width, room_height)
 			
@@ -63,37 +83,19 @@ func generate_dungeon():
 				rooms_placed.append(room_rect)
 				placed = true
 				if not player_placed:
-					var player_instance = player.instantiate()
+					var player_instance = $Camera
 					player_instance.position = (room_rect.position + room_rect.size/2) * grid_size + grid_size / 2
-					add_child(player_instance)
+					player_instance.visible = true
 					player_placed = true
 	flood_fill()
 	room_connections()
 	cull_corridors()
 
-func draw() -> void:
-	## draw simple grid
-	## replace with _draw() if you want it to run
-	
-	for x in map_width_cells + 1:
-		var start = Vector2(x * grid_size.x, 0)
-		var end = Vector2(x * grid_size.x, map_height_cells * grid_size.y)
-		draw_line(start, end, grid_color, grid_line_width)
-		
-	for y in map_height_cells + 1:
-		var start = Vector2(0, y * grid_size.y)
-		var end = Vector2(map_width_cells * grid_size.x, y * grid_size.y)
-		draw_line(start, end, grid_color, grid_line_width)
-
 func place_room(room_rect: Rect2i):
-	var cells: Array[Vector2i] = []
 	
 	for x in range(room_rect.position.x, room_rect.position.x + room_rect.size.x):
 		for y in range(room_rect.position.y, room_rect.position.y + room_rect.size.y):
-			cells.append(Vector2i(x,y))
 			room_tiles.append(Vector2i(x, y))
-			
-	tiles.set_cells_terrain_connect(cells, 0, 0, true)
 
 func flood_fill():
 	## begin flood fill algorithm, 
@@ -105,12 +107,91 @@ func flood_fill():
 		return
 		
 	start_points.shuffle()
-	flood_fill_corridors(start_points.pop_front())
-	"for start in start_points:
-		flood_fill_corridors(start)"
+	var start = start_points.pop_back()
+	flood_fill_corridors(start, false)
+
+func find_start_points() -> Array[Vector2i]:
+	## finds all empty tiles minus ones bordering rooms
 	
-	if not corridor_tiles.is_empty():
-		tiles.set_cells_terrain_connect(corridor_tiles, 0, 0, true)
+	var inverse_array: Array[Vector2i] = []
+	var x_tiles: Array[Vector2i] = []
+	
+	for room in room_tiles:
+		x_tiles.append(room)
+		for neighbor in get_neighbors(room):
+			if is_within_bounds(neighbor) and not x_tiles.has(neighbor):
+				x_tiles.append(neighbor)
+	
+	for x in range(map_width):
+		for y in range(map_height):
+			var cell = Vector2i(x,y)
+			if not x_tiles.has(cell):
+				inverse_array.append(cell)
+
+	return inverse_array
+
+func flood_fill_corridors(pos: Vector2i, placed_start: bool):
+	## algorithm that fills in tiles:
+	##   check neighboring tiles that are empty/unvisited
+	##   check neighboring tile's neighbors
+	##   if more than one connection (touching filled tile), do not fill
+	
+	var stack: Array[Vector2i] = [pos]
+	var directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
+	
+	while not stack.is_empty():
+		var current = stack.pop_back()
+		
+		if (not visited_tiles.has(current) and 
+			not corridor_tiles.has(current) and 
+			is_within_bounds(current) and 
+			not is_adjacent_to_room(current, 1)):
+			
+			if placed_start:
+				corridor_tiles.append(current)
+			
+			visited_tiles.append(current)
+			directions.shuffle()
+			
+			for direction in directions:
+				var neighbor = current + direction
+				
+				if (not visited_tiles.has(neighbor) and 
+					is_within_bounds(neighbor) and 
+					not is_adjacent_to_room(neighbor, 1)):
+					if not corridor_tiles.has(current):
+						#if start has at least one valid neighbor, place it
+						if not placed_start:
+							corridor_tiles.append(current)
+							placed_start = true 
+					
+					var connection_count = 0
+					var neighbor_directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
+					for neighbor_dir in neighbor_directions:
+						var neighbor_neighbor = neighbor + neighbor_dir
+						if (corridor_tiles.has(neighbor_neighbor) or
+							room_tiles.has(neighbor_neighbor) or
+							neighbor_neighbor == current):
+							connection_count += 1
+							
+					if connection_count > 1:
+						visited_tiles.append(neighbor)
+						
+					stack.append(neighbor)
+		
+		elif not placed_start:
+			visited_tiles.append(current)
+			
+			var start_points = find_start_points()
+			for tile in visited_tiles:
+				start_points.erase(tile)
+			start_points.shuffle()
+			
+			if not start_points.is_empty():
+				flood_fill_corridors(start_points.pop_back(), false)
+			else:
+				print("No valid starting points")
+				return
 
 func room_connections():
 	## find tiles neighboring rooms, choose one of these neighbors to connect to a corridor
@@ -121,6 +202,7 @@ func room_connections():
 		for edge in edges:
 			adjacent_tiles.append_array(get_neighbors(edge))
 		
+		adjacent_tiles = remove_duplicates(adjacent_tiles)
 		adjacent_tiles.shuffle()
 		var connections: Array[Vector2i] = []
 		for tile in adjacent_tiles:
@@ -135,13 +217,19 @@ func room_connections():
 			connections = reduce_array(connections)
 			if not corridor_tiles.has(connections[0]):
 				corridor_tiles.append(connections[0])
-			tiles.set_cells_terrain_connect(connections, 0, 0, true)
+		else:
+			var room_area = get_room_area(room)
+			for tile in room_area:
+				corridor_tiles.erase(tile)
+				room_tiles.erase(tile)
+				
+	var fill_tiles = corridor_tiles + room_tiles
+	tiles.set_cells_terrain_connect(fill_tiles, terrain_set, terrain, true)
 
 func cull_corridors():
 	var attempts = 0
 	var cull_count = 0
 	var cull_goal = int(corridor_tiles.size() * (tiles_to_cull * 0.01))
-	# print("corridors: ", corridor_tiles.size(), " cull_goal: ", cull_goal)
 	cull_corridors_recursive(attempts, cull_count, cull_goal)
 
 func cull_corridors_recursive(attempts: int, cull_count: int, cull_goal: int):
@@ -160,57 +248,11 @@ func cull_corridors_recursive(attempts: int, cull_count: int, cull_goal: int):
 		if (is_isolated_corridor_tile(current) and randf() <= percentage):
 			corridor_tiles.erase(current)
 			cull_tiles.append(current)
-			#print("culled tile: ", current, " count: ", cull_count + 1, "/", tiles_to_cull, " attempts: ", attempts + 1, "/", max_attempts * 100)
+			# print("culled tile: ", current, " count: ", cull_count + 1, "/", tiles_to_cull, " attempts: ", attempts + 1, "/", max_attempts * 100)
 			
-			tiles.set_cells_terrain_connect(cull_tiles, 0, -1, true)
+			tiles.set_cells_terrain_connect(cull_tiles, terrain_set, -1, true)
 			cull_corridors_recursive(attempts + 1, cull_count + 1, cull_goal)
 			return
-
-func flood_fill_corridors(pos: Vector2i):
-	## algorithm that fills in tiles:
-	##   check neighboring tiles that are empty/unvisited
-	##   check neighboring tile's neighbors
-	##   if more than one connection (touching filled tile), do not fill
-	
-	var stack: Array[Vector2i] = [pos]
-	var directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
-	
-	while not stack.is_empty():
-		var current = stack.pop_back()
-		
-		if (not visited_tiles.has(current) and 
-			not corridor_tiles.has(current) and 
-			is_within_bounds(current) and 
-			not is_adjacent_to_room(current, 1)):
-			
-			visited_tiles.append(current)
-			
-			directions.shuffle()
-			
-			for direction in directions:
-				var neighbor = current + direction
-				
-				if (not visited_tiles.has(neighbor) and 
-					is_within_bounds(neighbor) and 
-					not is_adjacent_to_room(neighbor, 1)):
-					if not corridor_tiles.has(current):
-						corridor_tiles.append(current) 
-					#if current has at least one valid neighbor, place it
-					
-					var connection_count = 0
-					var neighbor_directions = [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.DOWN, Vector2i.UP]
-					for neighbor_dir in neighbor_directions:
-						var neighbor_neighbor = neighbor + neighbor_dir
-						
-						if (corridor_tiles.has(neighbor_neighbor) or
-							room_tiles.has(neighbor_neighbor) or
-							neighbor_neighbor == current):
-							connection_count += 1
-							
-					if connection_count > 1:
-						visited_tiles.append(neighbor)
-						
-					stack.append(neighbor)
 
 func reduce_array(arr: Array) -> Array:
 	var working_array = arr.duplicate()
@@ -222,25 +264,12 @@ func reduce_array(arr: Array) -> Array:
 			working_array.remove_at(random_index)
 	return working_array
 
-func find_start_points() -> Array[Vector2i]:
-	## finds all empty tiles minus ones bordering rooms
-	
-	var inverse_array: Array[Vector2i] = []
-	
-	var x_tiles: Array[Vector2i] = []
-	for room in room_tiles:
-		x_tiles.append(room)
-		for neighbor in get_neighbors(room):
-			if is_within_bounds(neighbor) and not x_tiles.has(neighbor):
-				x_tiles.append(neighbor)
-	
-	for x in range(map_width_cells):
-		for y in range(map_height_cells):
-			var cell = Vector2i(x,y)
-			if not x_tiles.has(cell):
-				inverse_array.append(cell)
-
-	return inverse_array
+func remove_duplicates(arr: Array[Vector2i]) -> Array[Vector2i]:
+	var unique: Array[Vector2i] = []
+	for item in arr:
+		if not unique.has(item):
+			unique.append(item)
+	return unique
 
 func get_neighbors(pos: Vector2i) -> Array[Vector2i]:
 	return[
@@ -268,6 +297,17 @@ func get_perimeter_points(rect: Rect2i) -> Array[Vector2i]:
 	
 	return perimeter_points
 
+func get_room_area(rect: Rect2i) -> Array[Vector2i]:
+	var area_points: Array[Vector2i] = []
+	var pos = rect.position
+	var size = rect.size
+	
+	for x in range(pos.x, pos.x + size.x):
+		for y in range(pos.y, pos.y + size.y):
+			area_points.append(Vector2i(x, y))
+	
+	return area_points
+
 func get_adjacent_room_connections(pos: Vector2i) -> int:
 	var connections = 0
 	for room in room_tiles:
@@ -294,8 +334,8 @@ func is_empty_tile(pos: Vector2i) -> bool:
 	return tiles.get_cell_source_id(pos) == -1
 
 func is_within_bounds(pos: Vector2i) -> bool:
-	return (pos.x >= 0 and pos.x < map_width_cells and
-		pos.y >= 0 and pos.y < map_height_cells)
+	return (pos.x >= 0 and pos.x < map_width and
+		pos.y >= 0 and pos.y < map_height)
 
 func is_adjacent_to_room(pos: Vector2i, distance: int = 1) -> bool:
 	for room in room_tiles:
@@ -328,4 +368,3 @@ func is_isolated_corridor_tile(pos: Vector2i) -> bool:
 			not corridor_tiles.has(neighbor_pos)):
 			empty_neighbors += 1
 	return empty_neighbors >= 3
-	

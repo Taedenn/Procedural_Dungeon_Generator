@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dxh8l7n5ovcc1"
-path="res://.godot/imported/room1.png-373587e6b73b08707e84fc395639ea17.ctex"
+uid="uid://k2yo3ve1av35"
+path="res://.godot/imported/raya_stretched_tileset.png-10d87544120a8e2eb3cd6c61a4c06837.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/room1.png"
-dest_files=["res://.godot/imported/room1.png-373587e6b73b08707e84fc395639ea17.ctex"]
+source_file="res://assets/raya_stretched_tileset.png"
+dest_files=["res://.godot/imported/raya_stretched_tileset.png-10d87544120a8e2eb3cd6c61a4c06837.ctex"]
 
 [params]
 

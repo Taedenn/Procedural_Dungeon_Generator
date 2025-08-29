@@ -9,7 +9,7 @@ extends Node2D
 
 # height/width of dungeon bounds
 @export var map_width = 32
-@export var map_height = 32
+@export var map_height = 16
 @export var draw_grid: bool = false
 
 @export var num_rooms = 5
@@ -227,32 +227,39 @@ func room_connections():
 	tiles.set_cells_terrain_connect(fill_tiles, terrain_set, terrain, true)
 
 func cull_corridors():
-	var attempts = 0
-	var cull_count = 0
 	var cull_goal = int(corridor_tiles.size() * (tiles_to_cull * 0.01))
-	cull_corridors_recursive(attempts, cull_count, cull_goal)
-
-func cull_corridors_recursive(attempts: int, cull_count: int, cull_goal: int):
-	## cull corridor tiles surrounded by at least 3 empty tiles
-	if cull_count >= cull_goal or attempts >= max_attempts * 100:
-		return
+	var total_culled = 0
+	var passes = 0
 	
-	var percentage: float = tiles_to_cull * 0.01
+	while total_culled < cull_goal and passes < max_attempts * 100:
+		passes += 1
+		var culled_this_pass = _cull_pass(cull_goal - total_culled)
+		if culled_this_pass == 0:
+			break
+			
+		total_culled += culled_this_pass
+	if total_culled > 0:
+		tiles.set_cells_terrain_connect(corridor_tiles, terrain_set, 0, true)
+
+func _cull_pass(culls_this_pass: int) -> int:
+	## cull corridor tiles surrounded by at least 3 empty tiles
 	var cull_tiles: Array[Vector2i] = []
 	var corridors_to_check = corridor_tiles.duplicate()
 	corridors_to_check.shuffle()
-	for current in corridors_to_check:		
-		if cull_count >= cull_goal or attempts >= max_attempts * 100:
+	
+	var percentage: float = tiles_to_cull * 0.01
+	
+	for current in corridors_to_check:
+		if cull_tiles.size() >= culls_this_pass:
 			break
-		
-		if (is_isolated_corridor_tile(current) and randf() <= percentage):
+		if is_isolated_corridor_tile(current) and randf() <= percentage:
 			corridor_tiles.erase(current)
 			cull_tiles.append(current)
-			# print("culled tile: ", current, " count: ", cull_count + 1, "/", tiles_to_cull, " attempts: ", attempts + 1, "/", max_attempts * 100)
-			
-			tiles.set_cells_terrain_connect(cull_tiles, terrain_set, -1, true)
-			cull_corridors_recursive(attempts + 1, cull_count + 1, cull_goal)
-			return
+	if not cull_tiles.is_empty():
+		tiles.set_cells_terrain_connect(cull_tiles, terrain_set, -1, true)
+		
+	return cull_tiles.size()
+	
 
 func reduce_array(arr: Array) -> Array:
 	var working_array = arr.duplicate()

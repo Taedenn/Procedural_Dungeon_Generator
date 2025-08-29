@@ -804,9 +804,68 @@ texture_region_size = Vector2i(32, 64)
 0:4/0/physics_layer_0/polygon_1/points = PackedVector2Array(16, -32, 5.33333, -32, 5.33333, 32, 16, 32)
 0:4/0/terrains_peering_bit/bottom_side = 0
 0:4/0/terrains_peering_bit/top_side = 0
+8:0/0 = 0
+8:0/0/terrain_set = 1
+8:0/0/terrain = 0
+8:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -32, 16, -32, 16, 10.6667, -16, 10.6667)
+8:0/0/physics_layer_0/polygon_1/points = PackedVector2Array(-16, 21.3333, -5.33333, 21.3333, -5.33333, 32, -16, 32, -16, 21.3333)
+8:0/0/physics_layer_0/polygon_2/points = PackedVector2Array(5.33333, 21.3333, 16, 21.3333, 16, 32, 5.33333, 32, 5.33333, 21.3333)
+8:0/0/terrains_peering_bit/right_side = 0
+8:0/0/terrains_peering_bit/bottom_side = 0
+8:0/0/terrains_peering_bit/left_side = 0
+9:0/0 = 0
+9:0/0/terrain_set = 1
+9:0/0/terrain = 0
+9:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -32, 16, -32, 16, 10.6667, -16, 10.6667)
+9:0/0/terrains_peering_bit/right_side = 0
+9:0/0/terrains_peering_bit/bottom_right_corner = 0
+9:0/0/terrains_peering_bit/bottom_side = 0
+9:0/0/terrains_peering_bit/bottom_left_corner = 0
+9:0/0/terrains_peering_bit/left_side = 0
+9:1/0 = 0
+9:1/0/terrain_set = 1
+9:1/0/terrain = 0
+9:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -32, 16, -32, 16, 10.6667, -16, 10.6667)
+9:1/0/physics_layer_0/polygon_1/points = PackedVector2Array(-16, 21.3333, 16, 21.3333, 16, 32, -16, 32)
+9:1/0/terrains_peering_bit/right_side = 0
+9:1/0/terrains_peering_bit/left_side = 0
+10:1/0 = 0
+10:1/0/terrain_set = 1
+10:1/0/terrain = 0
+10:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(16, -32, -16, -32, -16, 10.6667, 16, 10.6667)
+10:1/0/physics_layer_0/polygon_1/points = PackedVector2Array(16, 10.6667, 5.33333, 10.6667, 5.33333, 32, 16, 32)
+10:1/0/terrains_peering_bit/bottom_side = 0
+10:1/0/terrains_peering_bit/bottom_left_corner = 0
+10:1/0/terrains_peering_bit/left_side = 0
+10:0/0 = 0
+10:0/0/terrain_set = 1
+10:0/0/terrain = 0
+10:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-16, -32, 16, -32, 16, 10.6667, -16, 10.6667)
+10:0/0/physics_layer_0/polygon_1/points = PackedVector2Array(-16, 10.6667, -5.33333, 10.6667, -5.33333, 32, -16, 32)
+10:0/0/terrains_peering_bit/right_side = 0
+10:0/0/terrains_peering_bit/bottom_right_corner = 0
+10:0/0/terrains_peering_bit/bottom_side = 0
+10:3/0 = 0
+10:3/0/terrain_set = 1
+10:3/0/terrain = 0
+10:3/0/physics_layer_0/polygon_0/points = PackedVector2Array(16, -32, -16, -32, -16, 10.6667, 16, 10.6667)
+10:3/0/terrains_peering_bit/right_side = 0
+10:3/0/terrains_peering_bit/bottom_right_corner = 0
+10:3/0/terrains_peering_bit/bottom_side = 0
+10:3/0/terrains_peering_bit/bottom_left_corner = 0
+10:3/0/terrains_peering_bit/left_side = 0
+10:2/0 = 0
+10:2/0/terrain_set = 1
+10:2/0/terrain = 0
+10:2/0/physics_layer_0/polygon_0/points = PackedVector2Array(16, -32, -16, -32, -16, 10.6667, 16, 10.6667)
+10:2/0/terrains_peering_bit/right_side = 0
+10:2/0/terrains_peering_bit/bottom_right_corner = 0
+10:2/0/terrains_peering_bit/bottom_side = 0
+10:2/0/terrains_peering_bit/bottom_left_corner = 0
+10:2/0/terrains_peering_bit/left_side = 0
 
 [sub_resource type="TileSet" id="TileSet_o8o5x"]
-tile_size = Vector2i(32, 32)
+tile_size = Vector2i(32, 64)
 physics_layer_0/collision_layer = 1
 terrain_set_0/mode = 0
 terrain_set_0/terrain_0/name = "Indoor"
@@ -819,14 +878,10 @@ sources/1 = SubResource("TileSetAtlasSource_q58gi")
 
 [node name="Auto_Tile" type="Node2D"]
 script = ExtResource("1_pk6on")
-terrain_set = 0
-grid_size = Vector2i(32, 32)
-map_width = 100
-map_height = 100
-draw_grid = true
-num_rooms = 100
-min_room_size = Vector2i(5, 5)
-tiles_to_cull = 40.0
+num_rooms = 8
+min_room_size = Vector2i(4, 2)
+max_room_size = Vector2i(6, 3)
+tiles_to_cull = 0.0
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_o8o5x")
@@ -837,6 +892,7 @@ script = ExtResource("3_o8o5x")
 speed = 300
 
 [node name="Camera2D" type="Camera2D" parent="Camera"]
+zoom = Vector2(2, 2)
 
 [node name="Sprite2D" type="Sprite2D" parent="Camera"]
 z_index = -5

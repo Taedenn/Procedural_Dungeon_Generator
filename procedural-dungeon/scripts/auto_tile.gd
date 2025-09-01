@@ -37,7 +37,6 @@ var grid_color = Color(1, 1, 1, 0.2)
 var grid_line_width = 1.0
 
 func _ready():
-	queue_redraw()
 	generate_dungeon()
 
 func _draw() -> void:
@@ -56,6 +55,19 @@ func _draw() -> void:
 func generate_dungeon(): 
 	## place number of rooms specified with given dimensions, 
 	## place player, and begin flood fill
+	
+	queue_redraw()
+	clear_dungeon()
+	
+	if terrain_set == 0:
+		grid_size.y = 32
+		min_room_size = Vector2i(3,3)
+		max_room_size = Vector2i(6,6)
+	else:
+		grid_size.y = 64
+		map_height = int(map_height / 2)
+		min_room_size = Vector2i(4,2)
+		max_room_size = Vector2i(6,3)
 	
 	# make sure tileset matches desired grid_size
 	tiles.tile_set.tile_size = grid_size
@@ -89,6 +101,17 @@ func generate_dungeon():
 	flood_fill()
 	room_connections()
 	cull_corridors()
+
+func clear_dungeon():
+	room_tiles.clear()
+	rooms_placed.clear()
+	visited_tiles.clear()
+	corridor_tiles.clear()
+	tiles.clear()
+	
+	"for child in get_children():
+		if child is CharacterBody2D:
+			child.queue_free()"
 
 func place_room(room_rect: Rect2i):
 	
@@ -258,7 +281,6 @@ func _cull_pass(culls_this_pass: int) -> int:
 		tiles.set_cells_terrain_connect(cull_tiles, terrain_set, -1, true)
 		
 	return cull_tiles.size()
-	
 
 func reduce_array(arr: Array) -> Array:
 	var working_array = arr.duplicate()

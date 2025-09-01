@@ -1,10 +1,11 @@
-[gd_scene load_steps=14 format=3 uid="uid://cm1lo18b50m82"]
+[gd_scene load_steps=15 format=3 uid="uid://cm1lo18b50m82"]
 
 [ext_resource type="Script" uid="uid://bij5cb8fjbk5q" path="res://scripts/auto_tile.gd" id="1_pk6on"]
 [ext_resource type="Texture2D" uid="uid://diyrh231mrj5k" path="res://assets/raya_basic_tileset.png" id="2_o8o5x"]
 [ext_resource type="Script" uid="uid://n2cwjlkhb6ua" path="res://scripts/camera.gd" id="3_o8o5x"]
 [ext_resource type="Texture2D" uid="uid://k2yo3ve1av35" path="res://assets/raya_stretched_tileset.png" id="3_yotmc"]
 [ext_resource type="Texture2D" uid="uid://do4x5g55wryhk" path="res://assets/bg.png" id="4_g0vo1"]
+[ext_resource type="Script" uid="uid://dxc6gjy2gcby8" path="res://scenes/panel.gd" id="6_q58gi"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_g0vo1"]
 texture = ExtResource("2_o8o5x")
@@ -914,6 +915,7 @@ font_size = 13
 
 [node name="Auto_Tile" type="Node2D"]
 script = ExtResource("1_pk6on")
+map_height = 32
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_o8o5x")
@@ -923,7 +925,6 @@ script = ExtResource("3_o8o5x")
 speed = 300
 
 [node name="Background" type="Sprite2D" parent="Camera"]
-visible = false
 z_index = -5
 texture = ExtResource("4_g0vo1")
 
@@ -954,19 +955,20 @@ offset_right = 238.0
 offset_bottom = 204.0
 grow_horizontal = 0
 theme_override_constants/separation = 10
+script = ExtResource("6_q58gi")
 
-[node name="OptionButton" type="OptionButton" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+[node name="TerrainSet" type="OptionButton" parent="Camera/Camera2D/Control/Panel BG/Panel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 alignment = 1
 selected = 0
 item_count = 2
-popup/item_0/text = "32 x 64"
+popup/item_0/text = "32 x 32"
 popup/item_0/id = 0
-popup/item_1/text = "32 x 32"
+popup/item_1/text = "32 x 64"
 popup/item_1/id = 1
 
-[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/OptionButton"]
+[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/TerrainSet"]
 offset_left = -105.0
 offset_top = 1.0
 offset_right = -20.0
@@ -1003,7 +1005,7 @@ theme_override_styles/slider = SubResource("StyleBoxFlat_yotmc")
 theme_override_styles/grabber_area = SubResource("StyleBoxFlat_q58gi")
 min_value = 6.0
 max_value = 200.0
-value = 16.0
+value = 32.0
 rounded = true
 allow_greater = true
 
@@ -1017,12 +1019,12 @@ text = "Map Height"
 label_settings = SubResource("LabelSettings_4jnoi")
 vertical_alignment = 1
 
-[node name="Draw Grid" type="CheckButton" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+[node name="DrawGrid" type="CheckButton" parent="Camera/Camera2D/Control/Panel BG/Panel"]
 layout_mode = 2
 size_flags_horizontal = 0
 theme_override_font_sizes/font_size = 13
 
-[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/Draw Grid"]
+[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/DrawGrid"]
 layout_mode = 0
 offset_left = -105.0
 offset_right = -20.0
@@ -1068,7 +1070,7 @@ text = "Cull % Corridors"
 label_settings = SubResource("LabelSettings_4jnoi")
 vertical_alignment = 1
 
-[node name="Button" type="Button" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+[node name="Generate" type="Button" parent="Camera/Camera2D/Control/Panel BG/Panel"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 13
 text = "Generate Dungeon"

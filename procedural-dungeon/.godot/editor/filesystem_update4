@@ -1,3 +1,4 @@
 res://scenes/auto_tile.tscn
 res://scripts/auto_tile.gd
 res://scripts/camera.gd
+res://scenes/panel.gd

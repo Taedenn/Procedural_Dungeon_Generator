@@ -1,11 +1,11 @@
 ea4bc82a6ad023ab7ee23ee620429895
-::res://::1756488571
-::res://assets/::1756497269
+::res://::1756694921
+::res://assets/::1756497274
 bg.png::CompressedTexture2D/CompressedTexture2D::8203223244407657216::1756408330::1756408332::1::::<><><>0<>0<>43018c89e55979f1d99fc89ec54d480b<>res://.godot/imported/bg.png-23a59c2e9cba2223a50fa3fe41b70b25.ctex::
 raya_basic_tileset.png::CompressedTexture2D/CompressedTexture2D::7771364018298375218::1756337198::1756337200::1::::<><><>0<>0<>483a71d21abfd2013bca1c4d9baef1e2<>res://.godot/imported/raya_basic_tileset.png-8161ae0336f5ab500b8047a76f01a1df.ctex::
 raya_stretched_tileset.png::CompressedTexture2D/CompressedTexture2D::759110347992209930::1756497269::1756497274::1::::<><><>0<>0<>f8c3956a933f5645278c18c68d8e0774<>res://.godot/imported/raya_stretched_tileset.png-10d87544120a8e2eb3cd6c61a4c06837.ctex::
-::res://scenes/::1756496408
-auto_tile.tscn::PackedScene::5669475617355417141::1756496408::0::1::::<><><>0<>0<><>::uid://bij5cb8fjbk5q::::res://scripts/auto_tile.gd<>uid://diyrh231mrj5k::::res://assets/raya_basic_tileset.png<>uid://n2cwjlkhb6ua::::res://scripts/camera.gd<>uid://k2yo3ve1av35::::res://assets/raya_stretched_tileset.png<>uid://do4x5g55wryhk::::res://assets/bg.png
+::res://scenes/::1756529168
+auto_tile.tscn::PackedScene/PackedScene::5669475617355417141::1756529168::0::1::::<><><>0<>0<><>::uid://bij5cb8fjbk5q::::res://scripts/auto_tile.gd<>uid://diyrh231mrj5k::::res://assets/raya_basic_tileset.png<>uid://n2cwjlkhb6ua::::res://scripts/camera.gd<>uid://k2yo3ve1av35::::res://assets/raya_stretched_tileset.png<>uid://do4x5g55wryhk::::res://assets/bg.png
 ::res://scripts/::1756489508
-auto_tile.gd::GDScript::2968336017695853740::1756489508::0::1::::<>Node2D<><>0<>0<><>::
-camera.gd::GDScript::968354378272259868::1756408796::0::1::::<>CharacterBody2D<><>0<>0<><>::
+auto_tile.gd::GDScript/GDScript::2968336017695853740::1756489508::0::1::::<>Node2D<><>0<>0<><>::
+camera.gd::GDScript/GDScript::968354378272259868::1756408796::0::1::::<>CharacterBody2D<><>0<>0<><>::

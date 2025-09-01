@@ -12,11 +12,11 @@ extends Node2D
 @export var map_height = 16
 @export var draw_grid: bool = false
 
-@export var num_rooms = 5
+@export var num_rooms = 8
 
 # min/max of room dimensions
-@export var min_room_size = Vector2i(2,2)
-@export var max_room_size = Vector2i(10,10)
+@export var min_room_size = Vector2i(4,2)
+@export var max_room_size = Vector2i(6,3)
 
 # affects how sparse the corridors will be
 # by culling percentage of remaining branches: 0% - 100%
@@ -38,10 +38,6 @@ var grid_line_width = 1.0
 
 func _ready():
 	queue_redraw()
-	
-	# make sure tileset matches desired grid_size
-	tiles.tile_set.tile_size = grid_size
-	
 	generate_dungeon()
 
 func _draw() -> void:
@@ -60,6 +56,9 @@ func _draw() -> void:
 func generate_dungeon(): 
 	## place number of rooms specified with given dimensions, 
 	## place player, and begin flood fill
+	
+	# make sure tileset matches desired grid_size
+	tiles.tile_set.tile_size = grid_size
 	
 	var player_placed = false
 	

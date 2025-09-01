@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://cm1lo18b50m82"]
+[gd_scene load_steps=14 format=3 uid="uid://cm1lo18b50m82"]
 
 [ext_resource type="Script" uid="uid://bij5cb8fjbk5q" path="res://scripts/auto_tile.gd" id="1_pk6on"]
 [ext_resource type="Texture2D" uid="uid://diyrh231mrj5k" path="res://assets/raya_basic_tileset.png" id="2_o8o5x"]
@@ -845,15 +845,6 @@ texture_region_size = Vector2i(32, 64)
 10:0/0/terrains_peering_bit/right_side = 0
 10:0/0/terrains_peering_bit/bottom_right_corner = 0
 10:0/0/terrains_peering_bit/bottom_side = 0
-10:3/0 = 0
-10:3/0/terrain_set = 1
-10:3/0/terrain = 0
-10:3/0/physics_layer_0/polygon_0/points = PackedVector2Array(16, -32, -16, -32, -16, 10.6667, 16, 10.6667)
-10:3/0/terrains_peering_bit/right_side = 0
-10:3/0/terrains_peering_bit/bottom_right_corner = 0
-10:3/0/terrains_peering_bit/bottom_side = 0
-10:3/0/terrains_peering_bit/bottom_left_corner = 0
-10:3/0/terrains_peering_bit/left_side = 0
 10:2/0 = 0
 10:2/0/terrain_set = 1
 10:2/0/terrain = 0
@@ -876,24 +867,208 @@ terrain_set_1/terrain_0/color = Color(0.622458, 0.000374168, 0.645074, 1)
 sources/0 = SubResource("TileSetAtlasSource_g0vo1")
 sources/1 = SubResource("TileSetAtlasSource_q58gi")
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2wgnw"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+corner_detail = 10
+
+[sub_resource type="LabelSettings" id="LabelSettings_4jnoi"]
+font_size = 13
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yotmc"]
+bg_color = Color(0.552643, 0.570842, 0.849524, 1)
+border_width_left = 85
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0, 0, 0, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 9
+corner_detail = 7
+expand_margin_left = 85.0
+expand_margin_top = 8.0
+expand_margin_right = 5.0
+expand_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q58gi"]
+bg_color = Color(0.225165, 0.247089, 0.551097, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+expand_margin_top = 3.0
+expand_margin_bottom = 3.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_yotmc"]
+font_size = 13
+
 [node name="Auto_Tile" type="Node2D"]
 script = ExtResource("1_pk6on")
-num_rooms = 8
-min_room_size = Vector2i(4, 2)
-max_room_size = Vector2i(6, 3)
-tiles_to_cull = 0.0
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_o8o5x")
 
 [node name="Camera" type="CharacterBody2D" parent="."]
-visible = false
 script = ExtResource("3_o8o5x")
 speed = 300
+
+[node name="Background" type="Sprite2D" parent="Camera"]
+visible = false
+z_index = -5
+texture = ExtResource("4_g0vo1")
 
 [node name="Camera2D" type="Camera2D" parent="Camera"]
 zoom = Vector2(2, 2)
 
-[node name="Sprite2D" type="Sprite2D" parent="Camera"]
-z_index = -5
-texture = ExtResource("4_g0vo1")
+[node name="Control" type="Control" parent="Camera/Camera2D"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel BG" type="Panel" parent="Camera/Camera2D/Control"]
+layout_mode = 0
+offset_left = 93.0
+offset_top = -245.0
+offset_right = 339.0
+offset_bottom = -41.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_2wgnw")
+
+[node name="Panel" type="VBoxContainer" parent="Camera/Camera2D/Control/Panel BG"]
+layout_mode = 2
+offset_left = 111.0
+offset_top = 1.0
+offset_right = 238.0
+offset_bottom = 204.0
+grow_horizontal = 0
+theme_override_constants/separation = 10
+
+[node name="OptionButton" type="OptionButton" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+alignment = 1
+selected = 0
+item_count = 2
+popup/item_0/text = "32 x 64"
+popup/item_0/id = 0
+popup/item_1/text = "32 x 32"
+popup/item_1/id = 1
+
+[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/OptionButton"]
+offset_left = -105.0
+offset_top = 1.0
+offset_right = -20.0
+offset_bottom = 27.0
+text = "Terrain Set"
+label_settings = SubResource("LabelSettings_4jnoi")
+vertical_alignment = 1
+
+[node name="MWidth" type="HSlider" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+layout_mode = 2
+theme_override_constants/center_grabber = 1
+theme_override_styles/slider = SubResource("StyleBoxFlat_yotmc")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_q58gi")
+min_value = 6.0
+max_value = 200.0
+value = 32.0
+rounded = true
+allow_greater = true
+
+[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/MWidth"]
+layout_mode = 0
+offset_left = -105.0
+offset_top = -5.0
+offset_right = -20.0
+offset_bottom = 21.0
+text = "Map Width"
+label_settings = SubResource("LabelSettings_4jnoi")
+vertical_alignment = 1
+
+[node name="MHeight" type="HSlider" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+layout_mode = 2
+theme_override_constants/center_grabber = 1
+theme_override_styles/slider = SubResource("StyleBoxFlat_yotmc")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_q58gi")
+min_value = 6.0
+max_value = 200.0
+value = 16.0
+rounded = true
+allow_greater = true
+
+[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/MHeight"]
+layout_mode = 0
+offset_left = -105.0
+offset_top = -5.0
+offset_right = -20.0
+offset_bottom = 21.0
+text = "Map Height"
+label_settings = SubResource("LabelSettings_4jnoi")
+vertical_alignment = 1
+
+[node name="Draw Grid" type="CheckButton" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 13
+
+[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/Draw Grid"]
+layout_mode = 0
+offset_left = -105.0
+offset_right = -20.0
+offset_bottom = 23.0
+text = "Draw Grid"
+label_settings = SubResource("LabelSettings_yotmc")
+vertical_alignment = 1
+
+[node name="Rooms" type="HSlider" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+layout_mode = 2
+theme_override_constants/center_grabber = 1
+theme_override_styles/slider = SubResource("StyleBoxFlat_yotmc")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_q58gi")
+value = 8.0
+rounded = true
+allow_greater = true
+
+[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/Rooms"]
+layout_mode = 0
+offset_left = -105.0
+offset_top = -5.0
+offset_right = -20.0
+offset_bottom = 21.0
+text = "# Rooms"
+label_settings = SubResource("LabelSettings_4jnoi")
+vertical_alignment = 1
+
+[node name="Corridors" type="HSlider" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+layout_mode = 2
+theme_override_constants/center_grabber = 1
+theme_override_styles/slider = SubResource("StyleBoxFlat_yotmc")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_q58gi")
+value = 60.0
+rounded = true
+
+[node name="Label" type="Label" parent="Camera/Camera2D/Control/Panel BG/Panel/Corridors"]
+layout_mode = 0
+offset_left = -105.0
+offset_top = -5.0
+offset_right = -4.0
+offset_bottom = 21.0
+text = "Cull % Corridors"
+label_settings = SubResource("LabelSettings_4jnoi")
+vertical_alignment = 1
+
+[node name="Button" type="Button" parent="Camera/Camera2D/Control/Panel BG/Panel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "Generate Dungeon"
